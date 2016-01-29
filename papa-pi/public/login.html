@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insert title here</title>
+<link href="./bootstrap/css/bootstrap.min.css" type="text/css"
+	rel="stylesheet">
+<link rel="stylesheet" href="./bootstrap/css/jqx.base.css"
+	type="text/css" />
+<link href="./bootstrap/css/bootstrap-switch.min.css" type="text/css"
+	rel="stylesheet">
+<script type="text/javascript" src="js/jquery-2.1.0.min.js"></script>
+<script type="text/javascript" src="bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript">
+	$(function() {
+		$('#pwd').keypress(function(event){
+			if(event.keyCode == 13){
+				$('#submit').trigger('click');
+			}
+		});
+		$('#submit').click( 
+				function() {
+					$.ajax({
+						url : '/api/login.do',
+						method : 'POST',
+						data : {
+							id : $('#id').val(),
+							pwd : $('#pwd').val()
+						},
+						success : function(data) {
+							console.log(data);
+							if (data.code) {
+								$('#status').find('#msg').text(
+										'아이디와 비밀번호가 틀립니다.').end().show();
+							} else if (data.code === 0) {
+								location.href = data.value;
+							}
+						},
+						error : function() {
+							$('#status').find('#msg').text(
+									'서버와 통신이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.')
+									.end().show();
+						},
+						complete : function() {
+							$('#indicator').modal('hide');
+						}
+
+					});
+				});
+		$('#reset').click(function() {
+			$('#id, #pwd').val('');
+		});
+
+	});
+</script>
+
+</head>
+<body>
+
+	<div class="wapper">
+		<div class="container">
+			<h1>
+				SECOM Pi&nbsp;<small>DIY SECOM with Raspberry-Pi, Arduino</small>
+			</h1>
+
+			<div class="form-horizontal">
+				<fieldset>
+
+					<!-- Form Name -->
+					<legend>Login</legend>
+					<div id="status" class="alert alert-danger" role="alert"
+						style="display: none;">
+
+						<span id="msg"></span>
+					</div>
+					<!-- Text input-->
+					<div class="form-group">
+						<label class="col-md-4 control-label " for="ID">ID</label>
+						<div class="controls col-md-4 ">
+							<input id="id" name="ID" type="text" placeholder="ID"
+								class="form-control input-medium" required="required">
+							<p class="help-block">E-mail 주소 형식입니다.</p>
+						</div>
+					</div>
+
+					<!-- Password input-->
+					<div class="form-group">
+						<label class="control-label col-md-4" for="pwd">Password</label>
+						<div class="col-md-4">
+							<input id="pwd" name="pwd" type="password" placeholder="password"
+								class="input-medium form-control" required="required">
+							<p class="help-block">비밀번호를 넣으세요.</p>
+						</div>
+					</div>
+
+
+					<div class="form-group">
+						<div class="col-md-offset-4 col-md-4">
+							<button class="btn btn-primary" id="submit">로그인</button>
+							<button class="btn btn-default" id="reset">취소</button>
+						</div>
+					</div>
+
+				</fieldset>
+			</div>
+
+		</div>
+	</div>
+	<!-- wrapper -->
+
+</body>
+</html>

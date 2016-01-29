@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insert title here</title>
+<link href="./bootstrap/css/bootstrap.min.css" type="text/css"
+	rel="stylesheet">
+<link rel="stylesheet" href="./bootstrap/css/jqx.base.css"
+	type="text/css" />
+<link href="./bootstrap/css/bootstrap-switch.min.css" type="text/css"
+	rel="stylesheet">
+	
+<style type="text/css">
+.gauge {
+	background-color: #333;
+	width: 150px;
+	height: 150px;
+}
+
+.switch {
+	background-color: #833;
+}
+
+body {
+	padding-top: 70px;
+}
+
+.logo {
+	margin: 0 auto;
+	width :100%;
+	height:100%;
+	padding :0
+}
+</style>
+<script type="text/javascript" src="js/jquery-2.1.0.min.js"></script>
+<script type="text/javascript" src="bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+<script type="text/javascript">
+$(function(){
+	$('#read_card').click(function(){
+		$('#indicator').modal('show');
+		$.ajax({
+			url : '/api/card_read.do',
+			method : 'GET',
+			success : function(data) {
+				if(data.status){
+					$('#indicator').modal('hide');
+					$('#status').find('#msg').text(
+					'카드 읽기를 실패 했습니다..')
+					.end().show();
+				}else{
+					$('#indicator #modal_msg').text(
+					'등록할 카드를 5초이내에 리더기에 터치하세요.');
+				}
+			},
+			error : function() {
+				$('#indicator').modal('hide');
+				$('#status').find('#msg').text(
+						'서버와 통신이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.')
+						.end().show();
+			},
+			complete : function(){
+				
+			}
+
+		});
+	});
+	var ws = io.connect();
+	ws.on('card', function(data) {
+		$('#indicator').modal('hide');
+		if(data.status){
+			$('#status').find('#msg').text(
+			'카드 읽기를 실패 했습니다.' + data.msg).end().show();
+		}else{
+			$('#uuid').val(data.uuid);
+		}
+	});
+});
+</script>
+</head>
+<body>
+	<div class="navbar navbar-inverse navbar-fixed-top ">
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle" data-toggle="collapse"
+				data-target=".navbar-collapse">
+				<span class="sr-only">Toggle navigation</span> <span
+					class="icon-bar"></span> <span class="icon-bar"></span> <span
+					class="icon-bar"></span>
+			</button>
+			<a class="nav navbar-brand"><img class="logo"
+				src='./media/iola_logo.png' /></a>
+		</div>
+		<div class="navbar-collapse collapse">
+			<ul class="nav navbar-nav">
+				<li class="active"><a href="/"><span class="glyphicon glyphicon-home"></span>Home</a></li>
+				 <li class="dropdown">
+          			<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><span class="glyphicon glyphicon-cog"></span>Settings<span class="caret"></span></a>
+       				<ul class="dropdown-menu" role="menu">
+			            <li><a href="#">사용자 등록</a></li>
+			            <li><a href="#">사용자 삭제</a></li>
+			            <li class="divider"></li>
+			            <li><a href="/card_reg.html">카드키 등록</a></li>
+			            <li><a href="#">카드키 삭제</a></li>
+			          </ul>
+		        </li>
+				 <li class="dropdown">
+          			<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><span class="glyphicon glyphicon-signal"></span>통계 및 이력<span class="caret"></span></a>
+       				<ul class="dropdown-menu" role="menu">
+			            <li><a href="#">출입통계</a></li>
+			          </ul>
+		        </li>
+
+			</ul>
+			<ul class="nav navbar-nav pull-right">
+				<li><a href="#"><span class="glyphicon glyphicon-user"></span><span id="user_name">사용자</span></a></li>
+				<li><a href="/api/logout.do"><span class="glyphicon glyphicon-off"></span>Logout</a></li>
+			</ul>
+		</div>
+	</div>
+	
+		<div class="container">
+		<h1>
+			SECOM Pi&nbsp;<small>DIY SECOM with Raspberry-Pi, Arduino</small>
+		</h1>
+		
+		<div class="form-horizontal">
+				<fieldset>
+
+					<!-- Form Name -->
+					<legend>카드키 등록</legend>
+					<div id="status" class="alert alert-danger" role="alert"
+						style="display: none;">
+
+						<span id="msg"></span>
+					</div>
+					<!-- Password input-->
+					<div class="form-group">
+							<label class="control-label col-md-4 col-sm-4 col-xs-12 " for="pwd">Card UUID</label>
+							<div class="col-md-4 col-sm-6 col-xs-8" >
+								<input id="uuid" name="pwd" type="text" placeholder="card UUID"
+									class="input-medium form-control" required="required">
+								<p class="help-block">카드의 UUID를 모르시면 오른쪽 카드일기 버튼을 누르세요.</p>
+							</div>
+							<button class="col-md-1 col-sm-2 col-xs-4 btn btn-primary" id="read_card">카드읽기</button>
+					</div>
+
+
+					<!-- Text input-->
+					<div class="form-group">
+						<label class="col-md-4 col-sm-4 control-label " for="ID">ID</label>
+						<div class="controls col-md-4 col-sm-8 ">
+							<input id="id" name="ID" type="text" placeholder="User ID"
+								class="form-control input-medium" required="required">
+							<p class="help-block">등록할 카드의 사용자 ID를 입력하세요.</p>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<div class="col-md-offset-6 col-md-4 col-sm-offset-8 col-sm-4 col-xs-offset-8 col-xs-4">
+							<button class="btn btn-primary" id="submit">등록</button>
+							<button class="btn btn-default" id="reset">취소</button>
+						</div>
+					</div>
+
+				</fieldset>
+			</div>
+		</div>
+	<!--  modal -->
+	<div id="modal" class="modal fade" tabindex="-1" role="dialog"
+		aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+					</button>
+					<h4 class="modal-title" id="modal_title"></h4>
+				</div>
+				<div class="modal-body">
+					<span id="modal_msg"></span>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!--  indicator -->
+	<div id="indicator" class="modal fade" tabindex="-1" role="dialog"
+		aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-body">
+					<span id="modal_msg">처리중 입니다..</span>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>		

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insert title here</title>
+<link href="./bootstrap/css/bootstrap.min.css" type="text/css"
+	rel="stylesheet">
+<link rel="stylesheet" href="./bootstrap/css/jqx.base.css"
+	type="text/css" />
+<link href="./bootstrap/css/bootstrap-switch.min.css" type="text/css"
+	rel="stylesheet">
+
+<style type="text/css">
+.gauge {
+	background-color: #333;
+	width: 150px;
+	height: 150px;
+}
+
+.switch {
+	background-color: #833;
+}
+
+body {
+	padding-top: 70px;
+}
+
+.logo {
+	margin: 0 auto;
+	width :100%;
+	height:100%;
+	padding :0
+}
+</style>
+<script type="text/javascript" src="js/jquery-2.1.0.min.js"></script>
+<script type="text/javascript" src="bootstrap/js/bootstrap.min.js"></script>
+
+<script type="text/javascript" src="bootstrap/js/jqxcore.js"></script>
+<script type="text/javascript" src="bootstrap/js/jqxchart.js"></script>
+<script type="text/javascript" src="bootstrap/js/jqxgauge.js"></script>
+<script type="text/javascript" src="bootstrap/js/bootstrap-switch.js"></script>
+<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+<script type="text/javascript">
+	var siren = new Audio('/media/siren.mp3');
+	siren.loop = true;
+	$(function() {
+		$('#thermometer, #thermometer2, #thermometer3').jqxGauge({
+			width : 150,
+			height : 150,
+			min : -20,
+			max : 50,
+			ranges : [ {
+				startValue : -20,
+				endValue : 0,
+				style : {
+					fill : '#e2e2e2'
+				}
+			}, {
+				startValue : 0,
+				endValue : 10,
+				style : {
+					fill : '#00ccff'
+				},
+			}, {
+				startValue : 10,
+				endValue : 25,
+				style : {
+					fill : '#4cb848'
+				},
+			}, {
+				startValue : 25,
+				endValue : 35,
+				style : {
+					fill : '#fad00b'
+				},
+			}, {
+				startValue : 35,
+				endValue : 50,
+				style : {
+					fill : '#e53d37'
+				},
+			} ],
+			labels : {
+				position : 'outside'
+			},
+			animationDuration : 500,
+			border : {
+				visible : false
+			},
+			caption : {
+				value : '온도 : 0°C'
+			}
+		});
+		$('#hygrometer, #hygrometer2, #hygrometer3').jqxGauge({
+			width : 150,
+			height : 150,
+			min : 0,
+			max : 100,
+			border : {
+				visible : false
+			},
+			caption : {
+				value : '습도 : 68%'
+			},
+			value : 68
+		});
+
+		$('[type="checkbox"]').bootstrapSwitch();
+
+		var ws = io.connect();
+		ws.on('monitor',
+						function(data) {
+							console.log('ws monitor');
+							console.log(data);
+							for ( var k in data) {
+								switch (k) {
+								case 'door':
+									if (data.door) {
+										$('#tr_door').removeClass('success')
+												.addClass('danger');
+										$('#td_door').text('열림').toggleClass(
+												"text-danger").removeClass(
+												"text-primary");
+									} else {
+										$('#tr_door').removeClass('danger')
+												.addClass('success');
+										$('#td_door').text('닫힘').removeClass(
+												"text-danger").addClass(
+												"text-primary");
+									}
+									break;
+								case "ir":
+									if (data.ir === 1) {
+										$('#tr_ir').removeClass('success')
+												.addClass('danger');
+										$('#td_ir').text('침입').toggleClass(
+												"text-danger").removeClass(
+												"text-primary text-warning");
+									} else if (data.ir === 0) {
+										$('#tr_ir').removeClass('danger')
+												.addClass('success');
+										$('#td_ir').text('정상').removeClass(
+												"text-danger  text-warning")
+												.addClass("text-primary");
+									} else if (data.ir === 9) {
+										$('#tr_ir')
+												.removeClass('danger succss')
+												.addClass('active');
+										$('#td_ir')
+												.text('켜는 중...')
+												.removeClass(
+														"text-danger text-primary")
+												.addClass('text-warning');
+
+									} else {
+										$('#tr_ir')
+												.removeClass('danger succss')
+												.addClass('active');
+										$('#td_ir').text('꺼짐').removeClass(
+												"text-danger text-primary")
+												.addClass('text-muted');
+									}
+
+									break;
+								case "fire":
+									if (data.fire) {
+										$('#tr_fire').removeClass('success')
+												.addClass('danger');
+										$('#td_fire').text('화재').toggleClass(
+												"text-danger").removeClass(
+												"text-primary");
+									} else {
+										$('#tr_fire').removeClass('danger')
+												.addClass('success');
+										$('#td_fire').text('정상').removeClass(
+												"text-danger").addClass(
+												"text-primary");
+									}
+
+									break;
+								case "act":
+									if (data.act) {
+										$('#tr_act').removeClass('success')
+												.addClass('danger');
+										$('#td_act').text('움직임').toggleClass(
+												"text-danger").removeClass(
+												"text-primary");
+									} else {
+										$('#tr_act').removeClass('danger')
+												.addClass('success');
+										$('#td_act').text('안움직임').removeClass(
+												"text-danger").addClass(
+												"text-primary");
+									}
+									break;
+								}
+							}
+						});
+		ws.on('alarm', function(data) {
+			console.log("ws alaram");
+			console.log(data);
+			siren.play();
+			$('#modal_title').text('경 보!!!');
+			$('#modal_msg').text(data.msg);
+			$('#modal').modal('show');
+
+			$('#modal').one('hidden.bs.modal', function(e) {
+				//$('#normal').trigger('click');
+				//siren.pause();
+			})
+
+		});
+		ws.on('mode', function(data){
+			if(data == "NOR"){
+				$('#normal').trigger('click');
+				siren.pause();
+			}
+		});
+
+		ws.on('close', function() {
+			console.log("close");
+		});
+		$('[name=security]').bind('change', function(evt) {
+			if (this.checked) {
+				if(this.id == 'normal') siren.pause();
+				sendCmd("MODE", $(this).val());
+			}
+
+		});
+		$('[type="checkbox"]').on('switchChange.bootstrapSwitch',
+				function(evt) {
+					if (this.checked) {
+						sendCmd($(this).val(), true);
+					} else {
+						sendCmd($(this).val(), false);
+					}
+				});
+		function sendCmd(key, value) {
+			console.log('sendCmd,' + "key:" + key + ",value:" + value);
+			$('#indicator').modal('show');
+			$.ajax({
+				url : '/api/cmd.do',
+				data : {
+					key : key,
+					value : value
+				},
+				success : function(data) {
+					console.log(data);
+					if (key === "MODE" && data.status !== 0) {
+						$('#normal').trigger('click');
+						$('#modal_title').text('방범모드 설정 실패!');
+						$('#modal_msg').text(data.msg);
+						$('#modal').modal('show');
+					}else if(key ==='init' && data.status === 0){
+						$('#user_name').text(data.user.name);
+						console.log(data.mode);
+						$('[name=security]:checked').removeAttr('checked');
+						$('#security_label label').removeClass("active");
+						if(data.mode == 'NOR'){
+							$('#normal').attr("checked", "checked").parent().addClass("active");;	
+							
+						}else if(data.mode == 'SLP'){
+							$('#sleep').attr("checked", "checked").parent().addClass("active");
+						}else if(data.mode == 'OUT'){
+							$('#out').attr("checked", "checked").parent().addClass("active");
+						}
+						
+					}
+				},
+				error : function() {
+					alert('error');
+				},
+				complete : function() {
+					$('#indicator').modal('hide');
+				}
+
+			});
+		}
+		
+		sendCmd('init', '');
+	});
+</script>
+</head>
+<body>
+	<div class="navbar navbar-inverse navbar-fixed-top ">
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle" data-toggle="collapse"
+				data-target=".navbar-collapse">
+				<span class="sr-only">Toggle navigation</span> <span
+					class="icon-bar"></span> <span class="icon-bar"></span> <span
+					class="icon-bar"></span>
+			</button>
+			<a class="nav navbar-brand"><img class="logo"
+				src='./media/iola_logo.png' /></a>
+		</div>
+		<div class="navbar-collapse collapse">
+			<ul class="nav navbar-nav">
+				<li class="active"><a href="#"><span class="glyphicon glyphicon-home"></span>Home</a></li>
+				 <li class="dropdown">
+          			<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><span class="glyphicon glyphicon-cog"></span>Settings<span class="caret"></span></a>
+       				<ul class="dropdown-menu" role="menu">
+			            <li><a href="#">사용자 등록</a></li>
+			            <li><a href="#">사용자 삭제</a></li>
+			            <li class="divider"></li>
+			            <li><a href="/card_reg.html">카드키 등록</a></li>
+			            <li><a href="#">카드키 삭제</a></li>
+			          </ul>
+		        </li>
+				 <li class="dropdown">
+          			<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><span class="glyphicon glyphicon-signal"></span>통계 및 이력<span class="caret"></span></a>
+       				<ul class="dropdown-menu" role="menu">
+			            <li><a href="#">출입통계</a></li>
+			          </ul>
+		        </li>
+
+			</ul>
+			<ul class="nav navbar-nav pull-right">
+				<li><a href="#"><span class="glyphicon glyphicon-user"></span><span id="user_name">사용자</span></a></li>
+				<li><a href="/api/logout.do"><span class="glyphicon glyphicon-off"></span>Logout</a></li>
+			</ul>
+		</div>
+	</div>
+	<div class="container">
+		<h1>
+			SECOM Pi&nbsp;<small>DIY SECOM with Raspberry-Pi, Arduino</small>
+		</h1>
+
+
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4>방범설정</h4>
+			</div>
+			<div class="panel-body">
+				<div class="row">
+					<div class="col-md-12 col-sm-12">
+						<div class="btn-group" data-toggle="buttons" id="security_label">
+							<label class="btn btn-primary active" id="lb_normal"> 방범 해제 <input
+								type="radio" name="security" id="normal" value="normal"
+								checked="checked">
+							</label> <label class="btn btn-primary" id="lb_sleep"> 재택 방범 <input
+								type="radio" value="sleep" name="security" id="sleep">
+							</label> <label class="btn btn-primary" id="lb_out"> 외출 방범 <input
+								type="radio" value="out" name="security" id="out">
+							</label>
+						</div>
+					</div>
+
+				</div>
+				<div class="row">
+					<div class="col-md-12 col-sm-12">
+						<h6>센서 상태</h6>
+						<table class="table  table-condensed">
+							<tr class="info">
+								<th>센서</th>
+								<th>상태</th>
+							</tr>
+							<tr id="tr_door" class="active">
+								<td>현관문</td>
+								<td id="td_door" class="text-mutied">꺼짐</td>
+							</tr>
+							<tr id="tr_ir" class="active">
+								<td>거실창</td>
+								<td id="td_ir" class="text-mutied">꺼짐</td>
+							</tr>
+							<tr id="tr_act" class="active">
+								<td>움직임</td>
+								<td id="td_act" class="text-mutied">꺼짐</td>
+							</tr>
+							<tr id="tr_fire" class="active">
+								<td>화재(차동식 스폿)</td>
+								<td id="td_fire" class="text-mutied">꺼짐</td>
+							</tr>
+							<tr class="active">
+								<td>화재(연기)</td>
+								<td class="text-muted">꺼짐</td>
+							</tr>
+						</table>
+					</div>
+				</div>
+			</div>
+			<!--  panel-body -->
+		</div>
+		<!--  panel -->
+	</div>
+	<!-- container -->
+
+
+	<div class="container">
+		<div class="row">
+			<div class="col-md-4 col-lg-4 col-sm-4">
+				<div class="panel panel-default">
+					<div class="panel-heading">1층(거실, 주방)</div>
+					<div class="panel-body">
+						<div class="row">
+							<div class="col-md-6 col-lg-6 col-sm-12 col-xs-6">
+								<div class="row">
+									<div class="col-md-12">
+										<div id="thermometer"></div>
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-md-12">
+										<div id="hygrometer"></div>
+									</div>
+								</div>
+							</div>
+							<div class="col-md-6 col-lg-6 col-sm-12 col-xs-6">
+								<div class="form-group">
+									<label for="chkL1" class=" control-label">조명</label> <input
+										type="checkbox" id="chkL1" value="L1" disabled="disabled" />
+								</div>
+								<div class="form-group">
+									<label for="chkAc" class=" control-label">냉방</label> <input
+										type="checkbox" id="chkAc" value="AC" />
+								</div>
+								<div class="form-group">
+									<label for="chkHT" class=" control-label">난방</label> <input
+										type="checkbox" id="chkHT" value="HT" disabled="disabled" />
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!--  column first -->
+			<div class="col-md-4  col-lg-4 col-sm-4">
+				<div class="panel panel-default">
+					<div class="panel-heading">2층(침실)</div>
+					<div class="panel-body">
+						<div class="row">
+							<div class="col-md-6 col-lg-6 col-sm-12 col-xs-6">
+								<div class="row">
+									<div class="col-md-12">
+										<div id="thermometer2"></div>
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-md-12">
+										<div id="hygrometer2"></div>
+									</div>
+								</div>
+							</div>
+
+							<div class="col-md-6 col-lg-6 col-sm-12 col-xs-6">
+								<div class="form-group">
+									<label for="chkL1" class=" control-label">조명</label> <input
+										type="checkbox" id="chkL2" value="L2" disabled="disabled" />
+								</div>
+								<div class="form-group">
+									<label for="chkAc" class=" control-label">냉방</label> <input
+										type="checkbox" id="chkAc" value="AC" disabled="disabled" />
+								</div>
+								<div class="form-group">
+									<label for="chkHT" class=" control-label">난방</label> <input
+										type="checkbox" id="chkHT" value="HT" disabled="disabled" />
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!--  column second -->
+			<div class="col-md-4 col-lg-4 col-sm-4">
+				<div class="panel panel-default">
+					<div class="panel-heading">3층(다락)</div>
+					<div class="panel-body">
+						<div class="row">
+							<div class="col-md-6 col-lg-6 col-sm-12 col-xs-6">
+								<div class="row">
+									<div class="col-md-12">
+										<div id="thermometer3"></div>
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-md-12">
+										<div id="hygrometer3"></div>
+									</div>
+								</div>
+
+							</div>
+							<div class="col-md-6 col-lg-6 col-sm-12 col-xs-6">
+								<div class="form-group">
+									<label for="chkL1" class=" control-label">조명</label> <input
+										type="checkbox" id="chkL3" value="L3" />
+								</div>
+								<div class="form-group">
+									<label for="chkAc" class=" control-label">냉방</label> <input
+										type="checkbox" id="chkAc" value="AC" disabled="disabled" />
+								</div>
+								<div class="form-group">
+									<label for="chkHT" class=" control-label">난방</label> <input
+										type="checkbox" id="chkHT" value="HT" disabled="disabled" />
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!--  column third -->
+		</div>
+		<!-- row -->
+	</div>
+	<!-- container -->
+
+
+	<!--  modal -->
+	<div id="modal" class="modal fade" tabindex="-1" role="dialog"
+		aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+					</button>
+					<h4 class="modal-title" id="modal_title"></h4>
+				</div>
+				<div class="modal-body">
+					<span id="modal_msg"></span>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!--  indicator -->
+	<div id="indicator" class="modal fade" tabindex="-1" role="dialog"
+		aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-body">
+					<span id="modal_msg">처리중 입니다..</span>
+				</div>
+			</div>
+		</div>
+	</div>
+</body> <!-- test -->
+</html>
